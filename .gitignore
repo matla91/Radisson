@@ -1,0 +1,30 @@
+# --- RAG Data & Vector Index ---
+# These files are large and should be regenerated locally
+data/faiss.index
+data/raw_texts.json
+data/chunks.json
+data/chunks_metadata.json
+data/scrape_registry.json
+data/error_details.json
+
+# --- Logs & Diagnostics ---
+data/*.log
+data/*.txt
+.pytest_cache/
+
+# --- Python Environment ---
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+build/
+dist/
+
+# --- OS Specific ---
+.DS_Store
+Thumbs.db
+
+# --- Security ---
+.env
