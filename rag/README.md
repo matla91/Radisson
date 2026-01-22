@@ -2276,5 +2276,3 @@ Radisson represents a **production-grade RAG architecture** optimized for instit
 
 **System Version:** 2.0  
 **Last Updated:** January 2025  
-**Maintainer:** UQAC RAG Architecture Team  
-**License:** Internal Use - Institutional Deployment Only
