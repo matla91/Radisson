@@ -1,0 +1,64 @@
+# ===== DÉPENDANCES CORE (déjà installées) =====
+beautifulsoup4>=4.12.0
+lxml>=5.0.0
+requests>=2.31.0
+urllib3>=2.0.0
+pypdf>=4.0.0
+faiss-cpu>=1.7.4  # Utilisez faiss-gpu si vous avez un GPU NVIDIA
+numpy>=1.24.0
+sentence-transformers>=2.5.0
+langchain>=0.1.0
+langchain-text-splitters>=0.0.1
+
+# ===== NOUVELLES DÉPENDANCES (pour les améliorations) =====
+
+# Recherche Hybride (BM25)
+rank-bm25>=0.2.2
+
+# Re-Ranking (Cross-Encoder)
+# Note: déjà inclus dans sentence-transformers, mais on le liste explicitement
+# sentence-transformers inclut déjà les cross-encoders
+
+# LLM Local pour Reformulation (Ollama)
+ollama>=0.2.0  # Client Python pour Ollama
+
+# ===== DÉPENDANCES OPTIONNELLES =====
+
+# Logging et Monitoring
+tqdm>=4.66.0  # Barres de progression
+
+# Tests et Benchmarks
+pytest>=7.4.0
+pytest-cov>=4.1.0
+
+# Qualité de Code
+black>=23.0.0  # Formatage
+flake8>=6.0.0  # Linting
+mypy>=1.5.0    # Type checking
+
+# ===== NOTES D'INSTALLATION =====
+
+# 1. Installation de base (si vous n'avez pas encore tout) :
+#    pip install -r requirements.txt
+
+# 2. Pour GPU (si vous avez une carte NVIDIA) :
+#    Remplacez faiss-cpu par faiss-gpu :
+#    pip uninstall faiss-cpu
+#    pip install faiss-gpu
+
+# 3. Installation d'Ollama (pour reformulation contextuelle) :
+#    Linux/Mac :
+#      curl https://ollama.ai/install.sh | sh
+#    Windows :
+#      Téléchargez depuis https://ollama.ai/download
+#
+#    Puis téléchargez un modèle :
+#      ollama pull llama3.2
+#      ollama pull mistral
+
+# 4. Modèles SentenceTransformers (téléchargés automatiquement) :
+#    - all-MiniLM-L6-v2 (~90 MB) - Embeddings dense
+#    - cross-encoder/ms-marco-MiniLM-L-6-v2 (~90 MB) - Re-ranking
+
+# 5. Vérification de l'installation :
+#    python -c "import faiss; import sentence_transformers; import ollama; print('✅ OK')"
