@@ -795,4 +795,3 @@ pip install beautifulsoup4 lxml requests pypdf
 
 **Last Updated:** January 2025  
 **Version:** 2.0  
-**Maintainer:** UQAC RAG Team
