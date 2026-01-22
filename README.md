@@ -1,10 +1,18 @@
-# Radisson: Production-Grade RAG Engine for Administrative Precision
+# Radisson
 
-## Overview
+<img width="385" height="239" alt="image" src="https://github.com/user-attachments/assets/44f29f36-9085-4ac5-82c6-09ac7c22e2cf" />
 
-### Enterprise RAG System for Institutional Knowledge
+In the spirit of **Pierre-Esprit Radisson**, the French explorer who ventured beyond the known maps of the 17th century, this system was built to navigate the unknown.
 
-**Radisson** is a production-ready **Retrieval-Augmented Generation (RAG) engine** specifically architected for high-precision question-answering over French administrative documents. Designed for deployment in institutional environments (universities, public administrations, corporate policy systems), Radisson prioritizes **accuracy**, **traceability**, and **hallucination prevention** over conversational flair.
+Where the explorer once crossed the lands of the North and the Saguenay, Radisson explores a different kind of territory: the institutional documentary ecosystem of the Université du Québec à Chicoutimi.
+
+This landscape is composed of policies, regulations, procedures, and administrative frameworks — dense, fragmented, and difficult to traverse. Information exists, but is often buried beneath structure, formal language, and cross-references.
+
+Radisson acts as a **methodical explorer**.  
+It maps documents, follows the right paths, and returns with **precise, verifiable, source-grounded answers**.
+
+Radisson does not invent knowledge.  
+It uncovers it.
 
 **Core Mission:** Provide factual, verifiable answers to administrative questions by retrieving and synthesizing information from a structured knowledge base, never inventing or extrapolating beyond source documents.
 
