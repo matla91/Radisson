@@ -1247,4 +1247,3 @@ The configuration (1000 chars, 200 overlap, 10-level separator hierarchy) has be
 
 **Document Version:** 1.0  
 **Last Updated:** January 2025  
-**Maintainer:** UQAC RAG Processing Team
