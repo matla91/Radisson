@@ -7,9 +7,13 @@ def build_prompt(question, contexts):
         source_name = meta.get('title', 'Document inconnu')
         doc_type = meta.get('doc_type', 'Règlement')
         chapitre = meta.get('chapitre', 'N/A')
+        url = meta.get("source", "")
         
         # Construction d'un bloc de contexte riche
-        context_text += f"\n[Source {i+1} | {doc_type} | {chapitre} | {source_name}]\n{c['text']}\n"
+        context_text += (
+        f"\n[Source {i+1} | {doc_type} | {chapitre} | {source_name} | URL: {url}]\n"
+        f"{c['text']}\n"
+        )
     prompt = f"""
 RÔLE DE L’ASSISTANT
 Tu es un assistant institutionnel spécialisé exclusivement dans le guide de gestion de l’Université du Québec à Chicoutimi (UQAC).
