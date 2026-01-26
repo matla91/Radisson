@@ -182,8 +182,11 @@ if "engine" not in st.session_state:
         retrieval_method="hybrid",
         max_history=5,
         use_ollama=True,
-        ollama_model="llama3.2",
+        ollama_model="mistral:latest",
     )
+
+if "ollama_model" not in st.session_state:
+    st.session_state.ollama_model = "mistral:latest"
 
 if "messages" not in st.session_state:
     # messages: [{"role": "user"/"assistant", "content": "...", "contexts": [...]}]
@@ -203,6 +206,15 @@ with st.sidebar:
     engine.retrieval_method = retrieval_method
 
     st.divider()
+    st.caption("LLM local (Ollama)")
+
+    st.text_input(
+        "Modèle Ollama",
+        key="ollama_model",
+        help="Ex: mistral:latest, llama3, qwen2.5"
+    )
+
+    st.divider()
     st.caption("Backend")
     st.write(f"**Data dir :** `{DATA_DIR}`")
 
@@ -216,6 +228,8 @@ with st.sidebar:
         st.session_state.messages = []
         engine.clear_history()
         st.rerun()
+
+engine.ollama_model = st.session_state.ollama_model
 
 # -----------------------------
 # Header
