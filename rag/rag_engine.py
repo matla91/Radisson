@@ -19,7 +19,7 @@ import re
 import logging
 from typing import List, Dict, Tuple, Optional
 from datetime import datetime
-from retriever_hybrid import HybridRetriever
+from retriever import HybridRetriever
 
 # Configuration du logging
 logging.basicConfig(
@@ -72,17 +72,17 @@ class RAGEngineV2:
         logger.info(f"✅ RAG Engine v2 prêt (méthode: {retrieval_method}, ollama: {use_ollama})")
     
     def _check_ollama_available(self):
-        """Vérifie que Ollama est installé et accessible."""
+        """Vérifie que Ollama est installé et accessible de manière robuste."""
         try:
             import ollama
-            # Test de connexion
-            models = ollama.list()
-            logger.info(f"✅ Ollama disponible, modèles: {[m['name'] for m in models['models']]}")
+            # On tente juste de lister les modèles sans chercher de clé spécifique
+            ollama.list()
+            logger.info("✅ Service Ollama détecté et accessible.")
         except ImportError:
-            logger.warning("⚠️ ollama-python non installé. Installez avec: pip install ollama")
+            logger.warning("⚠️ Bibliothèque 'ollama' non installée. Lancez: pip install ollama")
             self.use_ollama = False
         except Exception as e:
-            logger.warning(f"⚠️ Ollama non accessible: {e}")
+            logger.warning(f"⚠️ Ollama ne répond pas (vérifiez que l'app est lancée) : {e}")
             self.use_ollama = False
     
     def _needs_decontextualization(self, query: str) -> bool:
@@ -325,24 +325,30 @@ Question reformulée :"""
     
     def _generate_answer(self, prompt: str, contexts: List[Dict]) -> str:
         """
-        Génère la réponse (actuellement simulée).
-        
-        TODO: Remplacer par appel réel à Ollama/LLM local
+        Génère une réponse réelle avec Ollama au lieu de la simulation.
         """
-        # Simulation pour l'instant
-        answer = (
-            f"✅ Système RAG v2 opérationnel.\n\n"
-            f"Documents récupérés : {len(contexts)}\n"
-            f"Prompt construit : {len(prompt)} caractères\n\n"
-            f"[Intégrez ici votre appel à Ollama/LLM local]\n\n"
-            f"Sources :\n"
-        )
+        if not self.use_ollama:
+            return "⚠️ Mode simulation : Ollama n'est pas détecté."
+
+        try:
+            import ollama
+            logger.info(f"🤖 Radisson génère la réponse finale via {self.ollama_model}...")
         
-        for i, ctx in enumerate(contexts, 1):
-            title = ctx["metadata"]["title"]
-            answer += f"{i}. {title}\n"
+            # Appel réel au modèle local
+            response = ollama.generate(
+                model=self.ollama_model,
+                prompt=prompt,
+                options={
+                    "temperature": 0.2,  # Pour rester très factuel
+                    "top_p": 0.9
+                }
+            )
         
-        return answer
+            return response['response'].strip()
+
+        except Exception as e:
+            logger.error(f"❌ Erreur Ollama : {e}")
+            return "Je n'ai pas pu générer de réponse suite à un problème technique local."
     
     def _update_history(self, query: str, answer: str):
         """Met à jour l'historique conversationnel (FIFO)."""
