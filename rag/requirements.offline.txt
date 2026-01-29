@@ -1,0 +1,39 @@
+# -------------------------
+# Core Python utils
+# -------------------------
+tqdm
+
+# -------------------------
+# HTTP & scraping
+# -------------------------
+requests
+beautifulsoup4
+lxml
+urllib3
+
+# -------------------------
+# PDF extraction
+# -------------------------
+pypdf
+
+# -------------------------
+# Data & processing
+# -------------------------
+numpy
+
+# -------------------------
+# LangChain (chunking)
+# -------------------------
+langchain-text-splitters
+langchain-core
+
+# -------------------------
+# Embeddings
+# -------------------------
+torch
+sentence-transformers
+
+# -------------------------
+# Vector index
+# -------------------------
+faiss-cpu
