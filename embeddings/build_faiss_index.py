@@ -53,7 +53,9 @@ def build_index_cpu(data_dir="../data", model_name="sentence-transformers/all-Mi
     # 4. Construction de l'index (compatible avec ton retriever actuel)
     logger.info("🏗️  Construction de l'index FAISS (L2)...")
     dimension = embeddings.shape[1]
-    index = faiss.IndexFlatL2(dimension)
+    faiss.normalize_L2(embeddings)
+
+    index = faiss.IndexFlatIP(dimension)
     index.add(embeddings.astype("float32"))
     
     duration = time.time() - start_time
@@ -65,4 +67,5 @@ def build_index_cpu(data_dir="../data", model_name="sentence-transformers/all-Mi
     logger.info(f"💾 Index sauvegardé : {index_path} ({index.ntotal} vecteurs)")
 
 if __name__ == "__main__":
+
     build_index_cpu()
