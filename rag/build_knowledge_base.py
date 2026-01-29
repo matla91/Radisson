@@ -1,4 +1,3 @@
-# rag/build_knowledge_base.py
 from __future__ import annotations
 
 import subprocess
@@ -14,11 +13,27 @@ SCRAPE_SCRIPT = ROOT_DIR / "scraper" / "scrape_all.py"
 CHUNK_SCRIPT = ROOT_DIR / "processing" / "chunk_documents.py"
 FAISS_SCRIPT = ROOT_DIR / "embeddings" / "build_faiss_index.py"
 
+REQUIREMENTS_FILE = ROOT_DIR / "requirements.offline.txt"
+
 
 def banner(title: str) -> None:
     print("\n" + "=" * 72)
     print(title)
     print("=" * 72)
+
+
+def install_requirements() -> None:
+    banner("CHECKING PYTHON DEPENDENCIES")
+
+    if not REQUIREMENTS_FILE.exists():
+        print("⚠️  requirements.offline.txt not found — skipping dependency installation.")
+        return
+
+    print("📦 Installing / verifying dependencies...")
+    subprocess.run(
+        [sys.executable, "-m", "pip", "install", "-r", str(REQUIREMENTS_FILE)],
+        check=True,
+    )
 
 
 def run_step(label: str, script_path: Path) -> None:
@@ -28,8 +43,6 @@ def run_step(label: str, script_path: Path) -> None:
     banner(label)
     print(f"➡️  Running: {script_path.relative_to(ROOT_DIR)}")
 
-    # On lance avec le même interpréteur Python que celui qui exécute ce script
-    # et on se place à la racine du projet pour éviter les soucis de chemins relatifs.
     result = subprocess.run(
         [sys.executable, str(script_path)],
         cwd=str(ROOT_DIR),
@@ -51,7 +64,10 @@ def main() -> None:
 
     DATA_DIR.mkdir(exist_ok=True)
 
-    # 1) Scrape
+    # ✅ 0) Dépendances Python
+    install_requirements()
+
+    # 1) Scraping
     run_step("STEP 1 — Scraping documents", SCRAPE_SCRIPT)
 
     # 2) Processing + chunking
@@ -60,7 +76,7 @@ def main() -> None:
     # 3) Embeddings + FAISS
     run_step("STEP 3 — Embeddings / FAISS indexing", FAISS_SCRIPT)
 
-    # Check final
+    # Final check
     banner("FINAL CHECK")
     required = [DATA_DIR / "chunks.json", DATA_DIR / "faiss.index"]
     missing = [p for p in required if not p.exists()]
