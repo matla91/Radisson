@@ -38,7 +38,7 @@ def install_requirements() -> None:
 
 def run_step(label: str, script_path: Path) -> None:
     if not script_path.exists():
-        raise FileNotFoundError(f"Script introuvable: {script_path}")
+        raise FileNotFoundError(f"Script not found: {script_path}")
 
     banner(label)
     print(f"➡️  Running: {script_path.relative_to(ROOT_DIR)}")
@@ -51,9 +51,9 @@ def run_step(label: str, script_path: Path) -> None:
 
     if result.returncode != 0:
         raise RuntimeError(
-            f"Échec à l'étape: {label}\n"
-            f"Commande: {sys.executable} {script_path}\n"
-            f"Code retour: {result.returncode}"
+            f"Step failed: {label}\n"
+            f"Command: {sys.executable} {script_path}\n"
+            f"Return code: {result.returncode}"
         )
 
 
@@ -64,7 +64,7 @@ def main() -> None:
 
     DATA_DIR.mkdir(exist_ok=True)
 
-    # ✅ 0) Dépendances Python
+    # ✅ 0) Python dependencies
     install_requirements()
 
     # 1) Scraping
