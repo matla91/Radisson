@@ -1,4 +1,4 @@
-# rag/streamlit_app.py
+# rag/app.py
 from __future__ import annotations
 
 import html
@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 import streamlit as st
 
-# --- Robust imports (peu importe d'où tu lances streamlit) ---
+# --- Robust imports (no matter where you run Streamlit from) ---
 THIS_DIR = Path(__file__).resolve().parent
 if str(THIS_DIR) not in sys.path:
     sys.path.insert(0, str(THIS_DIR))
@@ -17,10 +17,10 @@ from rag_engine import RAGEngineV2  # noqa: E402
 
 
 # -----------------------------
-# Helpers UI
+# UI helpers
 # -----------------------------
 def _guess_url(meta: Dict[str, Any]) -> Optional[str]:
-    # essaie plusieurs clés possibles
+    # Try multiple possible keys
     for k in ("url", "source_url", "source", "link", "href"):
         v = meta.get(k)
         if isinstance(v, str) and v.strip().startswith("http"):
@@ -35,7 +35,7 @@ def _render_sources(contexts: List[Dict[str, Any]]) -> str:
     items: List[str] = []
     seen = set()
 
-    for c in contexts[:10]:  # on prend un peu plus, puis on déduplique
+    for c in contexts[:10]:  # Take a bit more, then deduplicate
         meta = c.get("metadata", {}) or {}
         title = str(meta.get("title", "Document")).strip()
         doc_type = str(meta.get("doc_type", "N/A")).strip()
@@ -73,17 +73,17 @@ def _render_sources(contexts: List[Dict[str, Any]]) -> str:
 
 
 def _render_message(role: str, content: str, contexts: Optional[List[Dict[str, Any]]] = None) -> str:
-    # role: "user" ou "assistant"
+    # role: "user" or "assistant"
     role_class = "user" if role == "user" else "ai"
 
-    # ✅ On échappe uniquement le TEXTE (jamais la structure HTML)
+    # ✅ Escape only the TEXT (never the HTML structure)
     safe_text = html.escape(content).replace("\n", "<br>")
 
     sources_html = ""
     if role == "assistant" and contexts:
         sources_html = _render_sources(contexts)
 
-    # ⚠️ IMPORTANT : pas d'indentation ici (sinon Markdown => code block)
+    # ⚠️ IMPORTANT: no indentation here (otherwise Markdown => code block)
     return (
         f"<div class='msg-row {role_class}'>"
         f"  <div class='bubble {role_class}'>"
@@ -172,7 +172,7 @@ h1, h2, h3 { margin-bottom: .4rem !important; }
 )
 
 # -----------------------------
-# Paths & Engine init (par session)
+# Paths & Engine init (per session)
 # -----------------------------
 DATA_DIR = (THIS_DIR.parent / "data").resolve()
 
@@ -237,7 +237,7 @@ engine.ollama_model = st.session_state.ollama_model
 st.title("Radisson — ChatBot UQAC")
 
 # -----------------------------
-# Render chat (HTML rendu correctement)
+# Render chat (HTML rendered properly)
 # -----------------------------
 chat_html = "".join(
     _render_message(m["role"], m["content"], m.get("contexts"))
@@ -252,10 +252,10 @@ st.markdown(f"<div class='chat-scroll'>{chat_html}</div>", unsafe_allow_html=Tru
 user_text = st.chat_input("Pose ta question sur le guide de gestion…")
 
 if user_text:
-    # 1) message user
+    # 1) User message
     st.session_state.messages.append({"role": "user", "content": user_text})
 
-    # 2) backend
+    # 2) Backend
     with st.spinner("Radisson réfléchit…"):
         try:
             answer, contexts = engine.ask(user_text, k=top_k)
@@ -266,8 +266,8 @@ if user_text:
             answer = f"Erreur backend : {e}"
             contexts = []
 
-    # 3) message assistant + contexts
+    # 3) Assistant message + contexts
     st.session_state.messages.append({"role": "assistant", "content": answer, "contexts": contexts})
 
-    # 4) refresh
+    # 4) Refresh
     st.rerun()
