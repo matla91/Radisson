@@ -1,4 +1,4 @@
-# rag/app.py
+# app.py
 from __future__ import annotations
 
 import html
@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 import streamlit as st
 
-# --- Robust imports (no matter where you run Streamlit from) ---
+# --- Robust imports (peu importe d'où tu lances streamlit) ---
 THIS_DIR = Path(__file__).resolve().parent
 if str(THIS_DIR) not in sys.path:
     sys.path.insert(0, str(THIS_DIR))
@@ -16,11 +16,26 @@ if str(THIS_DIR) not in sys.path:
 from rag_engine import RAGEngineV2  # noqa: E402
 
 
+# Ajoute cet import en haut si tu ne l'as pas déjà
+import ollama 
+
+def get_ollama_models():
+    """Récupère la liste des modèles disponibles localement via Ollama."""
+    try:
+        models_info = ollama.list()
+        # ollama.list() renvoie un dictionnaire avec une clé 'models'
+        # On extrait juste les noms (ex: 'llama3.2:latest')
+        return [m['model'] for m in models_info['models']]
+    except Exception as e:
+        # Si Ollama est éteint ou erreur, on renvoie une liste de secours
+        print(f"Erreur connexion Ollama: {e}")
+        return ["mistral:latest", "llama3.2:latest"]
+    
 # -----------------------------
-# UI helpers
+# Helpers UI
 # -----------------------------
 def _guess_url(meta: Dict[str, Any]) -> Optional[str]:
-    # Try multiple possible keys
+    # essaie plusieurs clés possibles
     for k in ("url", "source_url", "source", "link", "href"):
         v = meta.get(k)
         if isinstance(v, str) and v.strip().startswith("http"):
@@ -35,7 +50,7 @@ def _render_sources(contexts: List[Dict[str, Any]]) -> str:
     items: List[str] = []
     seen = set()
 
-    for c in contexts[:10]:  # Take a bit more, then deduplicate
+    for c in contexts[:10]:  # on prend un peu plus, puis on déduplique
         meta = c.get("metadata", {}) or {}
         title = str(meta.get("title", "Document")).strip()
         doc_type = str(meta.get("doc_type", "N/A")).strip()
@@ -66,24 +81,24 @@ def _render_sources(contexts: List[Dict[str, Any]]) -> str:
         "<div class='sources'>"
         "<div class='sources-title'>Sources</div>"
         "<ul class='sources-list'>"
-        + "".join(items) +
-        "</ul>"
+        + "".join(items)
+        + "</ul>"
         "</div>"
     )
 
 
 def _render_message(role: str, content: str, contexts: Optional[List[Dict[str, Any]]] = None) -> str:
-    # role: "user" or "assistant"
+    # role: "user" ou "assistant"
     role_class = "user" if role == "user" else "ai"
 
-    # ✅ Escape only the TEXT (never the HTML structure)
+    # ✅ On échappe uniquement le TEXTE (jamais la structure HTML)
     safe_text = html.escape(content).replace("\n", "<br>")
 
     sources_html = ""
     if role == "assistant" and contexts:
         sources_html = _render_sources(contexts)
 
-    # ⚠️ IMPORTANT: no indentation here (otherwise Markdown => code block)
+    # ⚠️ IMPORTANT : pas d'indentation ici (sinon Markdown => code block)
     return (
         f"<div class='msg-row {role_class}'>"
         f"  <div class='bubble {role_class}'>"
@@ -172,24 +187,62 @@ h1, h2, h3 { margin-bottom: .4rem !important; }
 )
 
 # -----------------------------
-# Paths & Engine init (per session)
+# Paths
 # -----------------------------
 DATA_DIR = (THIS_DIR.parent / "data").resolve()
 
+# ✅ Changement demandé : si la base n'est pas générée, on affiche un message clair et on stop
+REQUIRED_FILES = [DATA_DIR / "faiss.index", DATA_DIR / "chunks.json"]
+missing = [p for p in REQUIRED_FILES if not p.exists()]
+if missing:
+    st.error("Base de connaissances non générée.")
+    st.markdown(
+        """
+### Avant d'utiliser le chatbot
+Les fichiers nécessaires n'ont pas été trouvés dans `data/`.
+
+1. Génère la base de connaissances (scraping → processing → embeddings → FAISS) :
+```bash
+python rag/build_knowledge_base.py
+```
+
+2. Puis relance l'application :
+```bash
+streamlit run app.py
+```
+
+> Si tu utilises Docker : génère d'abord la base (sur ta machine, pour remplir `./data`), puis lance `docker compose up`.
+"""
+    )
+    st.stop()
+
+# -----------------------------
+# Engine init (par session)
+# -----------------------------
+# 1. On récupère la liste des modèles DISPONIBLES immédiatement
+available_models = get_ollama_models()
+
+# 2. On choisit un modèle par défaut sécurisé
+# Si llama3.2 est là, on le prend. Sinon, on prend le tout premier de la liste.
+if "llama3.2:latest" in available_models:
+    starting_model = "llama3.2:latest"
+else:
+    starting_model = available_models[0] if available_models else "mistral:latest"
+
+# 3. On initialise l'uniquement si ce n'est pas déjà fait
 if "engine" not in st.session_state:
     st.session_state.engine = RAGEngineV2(
         data_dir=str(DATA_DIR),
         retrieval_method="hybrid",
         max_history=5,
         use_ollama=True,
-        ollama_model="mistral:latest",
+        ollama_model=starting_model, # <--- On utilise le modèle détecté
     )
 
 if "ollama_model" not in st.session_state:
-    st.session_state.ollama_model = "mistral:latest"
+    st.session_state.ollama_model = starting_model
 
 if "messages" not in st.session_state:
-    # messages: [{"role": "user"/"assistant", "content": "...", "contexts": [...]}]
     st.session_state.messages: List[Dict[str, Any]] = []
 
 engine: RAGEngineV2 = st.session_state.engine
@@ -207,12 +260,21 @@ with st.sidebar:
 
     st.divider()
     st.caption("LLM local (Ollama)")
-
-    st.text_input(
+    
+    default_index = 0
+    if "llama3.2:latest" in available_models:
+        default_index = available_models.index("llama3.2:latest")
+    
+    st.selectbox(
         "Modèle Ollama",
+        options=available_models,
+        index=default_index,
         key="ollama_model",
-        help="Ex: mistral:latest, llama3, qwen2.5"
+        help="Sélectionne un modèle installé sur ta machine via 'ollama pull <nom>'",
     )
+    
+    if not available_models or available_models == ["mistral:latest", "llama3.2:latest"]:
+        st.warning("⚠️ Impossible de lister les modèles (Ollama est lancé ?). Mode secours activé.")
 
     st.divider()
     st.caption("Backend")
@@ -237,11 +299,10 @@ engine.ollama_model = st.session_state.ollama_model
 st.title("Radisson — ChatBot UQAC")
 
 # -----------------------------
-# Render chat (HTML rendered properly)
+# Render chat (HTML rendu correctement)
 # -----------------------------
 chat_html = "".join(
-    _render_message(m["role"], m["content"], m.get("contexts"))
-    for m in st.session_state.messages
+    _render_message(m["role"], m["content"], m.get("contexts")) for m in st.session_state.messages
 )
 
 st.markdown(f"<div class='chat-scroll'>{chat_html}</div>", unsafe_allow_html=True)
@@ -252,10 +313,10 @@ st.markdown(f"<div class='chat-scroll'>{chat_html}</div>", unsafe_allow_html=Tru
 user_text = st.chat_input("Pose ta question sur le guide de gestion…")
 
 if user_text:
-    # 1) User message
+    # 1) message user
     st.session_state.messages.append({"role": "user", "content": user_text})
 
-    # 2) Backend
+    # 2) backend
     with st.spinner("Radisson réfléchit…"):
         try:
             answer, contexts = engine.ask(user_text, k=top_k)
@@ -266,8 +327,8 @@ if user_text:
             answer = f"Erreur backend : {e}"
             contexts = []
 
-    # 3) Assistant message + contexts
+    # 3) message assistant + contexts
     st.session_state.messages.append({"role": "assistant", "content": answer, "contexts": contexts})
 
-    # 4) Refresh
+    # 4) refresh
     st.rerun()
