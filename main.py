@@ -38,7 +38,7 @@ def build_data_if_needed():
 def launch_app():
     print("🚀 Lancement du chatbot Radisson...")
     subprocess.run(
-        ["streamlit", "run", "app/app.py"]
+        ["streamlit", "run", "rag/app.py"]
     )
 
 
