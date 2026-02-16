@@ -6,52 +6,52 @@ import logging
 import torch
 import time
 
-# Configuration des logs
+# Logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 def build_index_cpu(data_dir="../data", model_name="sentence-transformers/all-MiniLM-L6-v2"):
     """
-    Version optimisée pour processeur (CPU) de la création de l'index FAISS.
+    CPU-optimized version for building the FAISS index.
     """
     chunks_path = os.path.join(data_dir, "chunks.json")
     index_path = os.path.join(data_dir, "faiss.index")
 
-    # 1. Optimisation CPU : Utiliser tous les cœurs disponibles
+    # 1. CPU optimization: use all available cores
     num_threads = os.cpu_count()
     torch.set_num_threads(num_threads)
-    logger.info(f"⚙️  Optimisation CPU : {num_threads} cœurs activés pour le calcul.")
+    logger.info(f"⚙️  CPU optimization: {num_threads} cores enabled for computation.")
 
-    # 2. Chargement et validation
+    # 2. Loading and validation
     if not os.path.exists(chunks_path):
-        logger.error(f"Fichier {chunks_path} introuvable !")
+        logger.error(f"File {chunks_path} not found!")
         return
 
     with open(chunks_path, "r", encoding="utf-8") as f:
         chunks = json.load(f)
     
-    # Validation : on ne garde que les chunks qui ont du texte valide
+    # Validation: keep only chunks containing valid text
     texts = [c["text"] for c in chunks if c.get("text") and len(c["text"]) > 0]
     
     if len(texts) != len(chunks):
-        logger.warning(f"⚠️ {len(chunks) - len(texts)} chunks vides ou invalides ont été ignorés.")
+        logger.warning(f"⚠️ {len(chunks) - len(texts)} empty or invalid chunks were ignored.")
 
-    # 3. Encodage
+    # 3. Encoding
     from sentence_transformers import SentenceTransformer
-    logger.info(f"🧠 Chargement du modèle {model_name}...")
+    logger.info(f"🧠 Loading model {model_name}...")
     model = SentenceTransformer(model_name, device="cpu")
     
-    logger.info("⚡ Génération des vecteurs sur CPU (cela peut prendre quelques minutes)...")
+    logger.info("⚡ Generating embeddings on CPU (this may take a few minutes)...")
     start_time = time.time()
     
-    # batch_size=32 est souvent le point d'équilibre idéal sur CPU
+    # batch_size=32 is often the best balance point on CPU
     embeddings = model.encode(texts, show_progress_bar=True, batch_size=32)
     
-    # Libération immédiate de la mémoire des textes (optionnel mais recommandé sur portable)
+    # Immediately free text memory (optional but recommended on laptops)
     del texts
     
-    # 4. Construction de l'index (compatible avec ton retriever actuel)
-    logger.info("🏗️  Construction de l'index FAISS (L2)...")
+    # 4. Index construction (compatible with your current retriever)
+    logger.info("🏗️  Building FAISS index (L2)...")
     dimension = embeddings.shape[1]
     faiss.normalize_L2(embeddings)
 
@@ -60,11 +60,11 @@ def build_index_cpu(data_dir="../data", model_name="sentence-transformers/all-Mi
     
     duration = time.time() - start_time
 
-    # 5. Sauvegarde
+    # 5. Saving
     faiss.write_index(index, index_path)
     
-    logger.info(f"✅ Indexation terminée en {duration:.2f}s")
-    logger.info(f"💾 Index sauvegardé : {index_path} ({index.ntotal} vecteurs)")
+    logger.info(f"✅ Indexing completed in {duration:.2f}s")
+    logger.info(f"💾 Index saved: {index_path} ({index.ntotal} vectors)")
 
 if __name__ == "__main__":
 
